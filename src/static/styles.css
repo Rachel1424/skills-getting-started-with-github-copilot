@@ -15,6 +15,31 @@ body {
   background-color: #f5f5f5;
 }
 
+.participants ul {
+  list-style: none;
+  padding: 0;
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.delete-icon {
+  cursor: pointer;
+  color: #dc3545;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.delete-icon:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
 header {
   text-align: center;
   padding: 20px 0;

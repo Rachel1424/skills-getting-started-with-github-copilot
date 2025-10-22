@@ -1,3 +1,27 @@
+// Make unregisterParticipant function globally accessible
+window.unregisterParticipant = async function(activity, email) {
+  try {
+    const response = await fetch(`/unregister`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ activity, email }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to unregister participant');
+    }
+
+    // Refresh activities after successful unregistration
+    await window.fetchActivities();
+    showMessage('Successfully unregistered from the activity', 'success');
+  } catch (error) {
+    console.error('Error unregistering participant:', error);
+    showMessage('Failed to unregister participant', 'error');
+  }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   const activitiesList = document.getElementById("activities-list");
   const activitySelect = document.getElementById("activity");
@@ -11,6 +35,30 @@ document.addEventListener("DOMContentLoaded", () => {
     if (parts.length === 0) return (email || "").slice(0, 2).toUpperCase();
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  // Function to unregister a participant from an activity
+  async function unregisterParticipant(activity, email) {
+    try {
+      const response = await fetch(`/unregister`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ activity, email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to unregister participant');
+      }
+
+      // Refresh activities after successful unregistration
+      await fetchActivities();
+      showMessage('Successfully unregistered from the activity', 'success');
+    } catch (error) {
+      console.error('Error unregistering participant:', error);
+      showMessage('Failed to unregister participant', 'error');
+    }
   }
 
   // Function to fetch activities from API
@@ -39,7 +87,11 @@ document.addEventListener("DOMContentLoaded", () => {
             ? `<div class="participants"><h5>Participants</h5><ul>${participants
                 .map(
                   (p) =>
-                    `<li><span class="participant-badge">${getInitials(p)}</span><span class="participant-email">${p}</span></li>`
+                    `<li class="participant-item">
+                      <span class="participant-badge">${getInitials(p)}</span>
+                      <span class="participant-email">${p}</span>
+                      <span class="delete-icon" title="Unregister" onclick="unregisterParticipant('${name}', '${p}')">×</span>
+                    </li>`
                 )
                 .join("")}</ul></div>`
             : `<p class="info">No participants yet</p>`;
@@ -88,6 +140,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities list to show the new registration
+        await fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
