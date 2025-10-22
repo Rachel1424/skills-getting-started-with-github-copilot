@@ -4,6 +4,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  // Helper to produce initials from an email/username
+  function getInitials(email) {
+    const namePart = (email || "").split("@")[0];
+    const parts = namePart.split(/[\._\-]/).filter(Boolean);
+    if (parts.length === 0) return (email || "").slice(0, 2).toUpperCase();
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
@@ -13,26 +22,43 @@ document.addEventListener("DOMContentLoaded", () => {
       // Clear loading message
       activitiesList.innerHTML = "";
 
+      // Clear existing select options except placeholder
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
-        const spotsLeft = details.max_participants - details.participants.length;
+        const participants = Array.isArray(details.participants) ? details.participants : [];
+        const spotsLeft = Math.max(0, (details.max_participants || 0) - participants.length);
+
+        // Build participants HTML
+        const participantsHTML =
+          participants.length > 0
+            ? `<div class="participants"><h5>Participants</h5><ul>${participants
+                .map(
+                  (p) =>
+                    `<li><span class="participant-badge">${getInitials(p)}</span><span class="participant-email">${p}</span></li>`
+                )
+                .join("")}</ul></div>`
+            : `<p class="info">No participants yet</p>`;
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <p><strong>Availability:</strong> ${spotsLeft} spot${spotsLeft !== 1 ? "s" : ""} left</p>
+          ${participantsHTML}
         `;
 
         activitiesList.appendChild(activityCard);
 
-        // Add option to select dropdown
+        // Add option to select dropdown (disable if full)
         const option = document.createElement("option");
         option.value = name;
         option.textContent = name;
+        if (spotsLeft <= 0) option.disabled = true;
         activitySelect.appendChild(option);
       });
     } catch (error) {
